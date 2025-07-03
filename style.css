@@ -1,4 +1,4 @@
-/* 1. Sayfa Arka Planı ve Ortalaması */
+/*  Sayfa Arka Planı ve Ortalaması */
 body {
     background-color: #f0f0f0; /* açık gri */
     display: flex;
@@ -8,7 +8,7 @@ body {
     margin: 0;
 }
 
-/* 2. Form Kutusu */
+/* Form Kutusu */
 .form-container {
     background-color: white;
     padding: 20px;
@@ -17,7 +17,7 @@ body {
     width: 300px;
 }
 
-/* 3. Başlık ve Linkler */
+/* Başlık ve Linkler */
 h1 {
     font-family: Arial, sans-serif;
     color: #333;
@@ -29,7 +29,7 @@ a {
     color: #007bff;
 }
 
-/* 4. Form Elemanları */
+/* Form Elemanları */
 input[type="text"],
 input[type="email"],
 input[type="password"] {
