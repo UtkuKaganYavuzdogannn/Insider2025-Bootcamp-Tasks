@@ -1,0 +1,20 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 40px;
+  background-color: #909ff0;
+}
+
+input, button {
+  padding: 30px;
+  font-size: 23px;
+  margin: 15px;
+  color: red;
+  background-color: white;
+}
+
+#time { 
+  font-size: 44px;
+  margin-top: 30px;
+  font-weight: bold;
+}
