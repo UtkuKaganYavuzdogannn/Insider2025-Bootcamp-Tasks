@@ -6,6 +6,8 @@ const gorevListesi = document.getElementById("gorevListesi");
 form.addEventListener("submit", function(event) {
   event.preventDefault();
 
+try {
+
   if (baslikInput.value.trim() === "") {
     alert("Lütfen görev başlığı girin.");
     return;
@@ -27,4 +29,9 @@ form.addEventListener("submit", function(event) {
 
   gorevListesi.appendChild(li);
   form.reset();
+  } 
+  catch (error) {
+    console.error("Eklenme esnasında hata oluştu:", error);
+    alert(error.message);
+  }
 });
