@@ -1,5 +1,5 @@
 let postIlk = 0;
-let postSon = 7;
+let postSon = 6;
 let yuklemeDurumu= false; 
 
 $(document).ready(function () {
@@ -8,14 +8,11 @@ $(document).ready(function () {
 
 
 // Kaydırma eventinin tetiklenmesi
-  $(window).scroll(function () {
-    // Sayfanın sonuna yakın mıyız kontrolü
-    if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
-      if (!yuklemeDurumu) {
-        loadPosts();
-      }
-    }
-  });
+$(window).on('scroll', function() {
+  if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+    loadPosts();
+  }
+});
 
 // Postları çeken fonksiyon ve yüklemenin başlaması
 function loadPosts() {
