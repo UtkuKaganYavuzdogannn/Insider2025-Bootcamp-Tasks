@@ -1,0 +1,22 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: #f8f8f8;
+}
+
+h1 {
+  color: #333;
+}
+
+.post {
+  border: 1px solid #ccc;
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: #fff;
+}
+
+#loading {
+  text-align: center;
+  font-style: italic;
+  color: gray;
+}
