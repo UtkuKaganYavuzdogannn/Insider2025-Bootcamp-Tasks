@@ -11,7 +11,8 @@
         productImage: 'product-image',
         productPrice: 'product-price',
         cart: 'cart',
-        clearCartButton: 'clear-cart-btn'
+        clearCartButton: 'clear-cart-btn',
+        searchInput: 'search-input'
     };
 
     const selectors = {
@@ -22,10 +23,13 @@
         detailButton: `.${classes.detailButton}`,
         cart: `.${classes.cart}`,
         clearCartButton: `.${classes.clearCartButton}`,
+        searchInput: `.${classes.searchInput}`,
         appendLocation: '#container'
     };
 
-    const self = {};
+    const self = {
+        allProducts: []
+    };
 
     self.init = () => {
         self.reset();
@@ -33,7 +37,6 @@
         self.buildHTML();
         self.fetchProducts();
         self.setEvents();
-        self.loadCartFromLocalStorage();  // Sepeti yükle
     };
 
     self.reset = () => {
@@ -55,10 +58,23 @@
 
     .custom-wrapper {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
         padding: 20px;
     }
 
+    /* Slider alanı */
+    #slider {
+        width: 80%;
+        margin: 20px auto;
+    }
+    #slider img {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+    }
+
+    /* Ürün listesi grid */
     #productList {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -69,7 +85,7 @@
     }
 
     .custom-container {
-        display: flex; /* Ürünlerin görünmesini sağlamak için eklendi */
+        display: flex;
         flex-direction: column;
         justify-content: space-between;
         gap: 10px;
@@ -109,14 +125,32 @@
         cursor: pointer;
         margin-top: 10px;
     }
-
     .add-to-cart-btn:hover,
     .clear-cart-btn:hover,
     .detail-btn:hover {
         background-color: #2980b9;
     }
 
-    /* Sepetteki ürünlerdeki sil butonu */
+    /* Sepetteki ürünler */
+    .cart {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        background: rgba(255,255,255,0.95);
+        border: 1px solid #333;
+        padding: 10px;
+        width: 280px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        border-radius: 6px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .cart .custom-container {
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    /* Sepetten silme butonu */
     .remove-from-cart-btn {
         position: absolute;
         top: 5px;
@@ -131,50 +165,44 @@
         cursor: pointer;
         line-height: 20px;
     }
-
     .remove-from-cart-btn:hover {
         background-color: #c0392b;
     }
 
-    .cart {
-        position: fixed;
-        right: 20px;
-        bottom: 20px;
-        background: rgba(255,255,255,0.95);
-        border: 1px solid #333;
-        padding: 10px;
-        width: 280px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        border-radius: 6px;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .cart .custom-container {
-        margin-bottom: 10px;
-        position: relative;
-    }
-
-    /* Hover animasyonu için */
+    /* Hover animasyonu */
     .hovered {
         border-color: #3498db;
         box-shadow: 0 0 10px rgba(0,123,255,0.5);
         transform: scale(1.02);
     }
+
+    /* Arama inputu */
+    .search-input {
+        display: block;
+        width: 300px;
+        padding: 8px;
+        margin: 10px auto 20px auto;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        text-align: center;
+    }
     </style>
 
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+        <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" />
+        <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script>
         `;
         $('head').append(customStyle);
-
-        // Fancybox (Modal) CDN ekle
-        $('head').append(`
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" />
-            <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script>
-        `);
     };
 
     self.buildHTML = () => {
         const html = `
+            <input type="text" class="${classes.searchInput}" placeholder="Ürün ara veya ID gir" 
+                   style="display:block;margin:20px auto;padding:8px;width:300px;">
+
+            <div class="slider"></div>
             <div class="${classes.wrapper}">
                 <div id="productList"></div>
             </div>
@@ -188,107 +216,137 @@
     };
 
     self.fetchProducts = () => {
-        $.get('https://fakestoreapi.com/products?limit=6', function(products) {
-            products.forEach(product => {
-                const productCard = self.buildProductCard(product);
-                $("#productList").append(productCard);
-                productCard.fadeIn(600);
-            });
+        $.get('https://fakestoreapi.com/products', function(products) {
+            self.allProducts = products;
+            self.renderProducts(products);
+            self.initSlider(products);
+            self.loadCartFromLocalStorage();
+        });
+    };
+
+    self.renderProducts = (products) => {
+        const list = $("#productList");
+        list.empty();
+        products.forEach(product => {
+            const card = self.buildProductCard(product);
+            list.append(card.hide().fadeIn(500));
         });
     };
 
     self.buildProductCard = (product) => {
-        return $(`
-            <div class="${classes.container}" 
-                 data-title="${product.title}" 
-                 data-description="${product.description}" 
-                 data-image="${product.image}">
-                 
+        return $(`<div class="${classes.container}" 
+                    data-id="${product.id}" 
+                    data-title="${product.title}" 
+                    data-description="${product.description}" 
+                    data-image="${product.image}">
                 <img src="${product.image}" alt="${product.title}" 
                      class="${classes.productImage}" 
                      data-fancybox="gallery" 
                      data-caption="<strong>${product.title}</strong><br>${product.description}">
-                     
                 <p>${product.title}</p>
                 <p class="${classes.productPrice}">${product.price} $</p>
                 <button class="${classes.addToCartButton}">Sepete Ekle</button>
                 <button class="${classes.detailButton}">Detay Göster</button>
-            </div>
-        `);
+            </div>`);
     };
 
     self.setEvents = () => {
         // Sepete ekle
         $(document).on('click.eventListener', selectors.addToCartButton, function () {
             const card = $(this).closest(selectors.container);
-            const title = card.data('title');
+            const id = card.data('id');
 
             // Sepette aynı ürün var mı kontrol et
-            const exists = $("#cartItems").children().toArray().some(el => $(el).data('title') === title);
-            if(exists) {
+            const exists = $("#cartItems").children().toArray().some(el => $(el).data('id') === id);
+            if (exists) {
                 alert('Bu ürün zaten sepette!');
                 return;
             }
 
-            const clonedCard = card.clone(true);
-            clonedCard.find(selectors.addToCartButton).remove(); 
-            clonedCard.append('<button class="remove-from-cart-btn">×</button>'); // silme butonu
+            // Klonla ve data-id koru
+            const cloned = card.clone(false);
+            cloned.attr('data-id', id).attr('data-title', card.data('title'));
+            cloned.find(selectors.addToCartButton).remove();
+            cloned.append('<button class="remove-from-cart-btn">×</button>');
+            $("#cartItems").append(cloned);
 
-            $("#cartItems").append(clonedCard);
             self.updateLocalStorage();
         });
 
-        // Sepeti temizle
+        // Sepeti temizleme
         $(document).on('click.eventListener', selectors.clearCartButton, function () {
             $("#cartItems").empty();
             localStorage.removeItem('cart');
         });
 
-        // Sepetten ürün sil
-        $(document).on('click.eventListener', '.remove-from-cart-btn', function() {
+        // silme
+        $(document).on('click.eventListener', '.remove-from-cart-btn', function () {
             $(this).closest(selectors.container).remove();
             self.updateLocalStorage();
         });
 
-        // Hover animasyonu
+        // hover 
         $(document).on('mouseenter.eventListener mouseleave.eventListener', selectors.container, function () {
             $(this).toggleClass('hovered').fadeTo(200, $(this).hasClass('hovered') ? 0.9 : 1);
         });
 
-        // Detay Göster (Fancybox modal)
+        // Fancybox detay kısmında
         $(document).on('click.eventListener', selectors.detailButton, function () {
             const card = $(this).closest(selectors.container);
-            const img = card.data('image');
-            const title = card.data('title');
-            const desc = card.data('description');
-
             Fancybox.show([{
-                src: img,
+                src: card.data('image'),
                 type: 'image',
-                caption: `<strong>${title}</strong><br>${desc}`
+                caption: `<strong>${card.data('title')}</strong><br>${card.data('description')}`
             }]);
+        });
+
+        // Filtre
+        let timer;
+        $(document).on('input.eventListener', selectors.searchInput, function () {
+            clearTimeout(timer);
+            const val = $(this).val().toLowerCase().trim();
+            timer = setTimeout(() => {
+                const filtered = val
+                    ? self.allProducts.filter(p =>
+                        p.title.toLowerCase().includes(val) || p.id.toString() === val)
+                    : self.allProducts;
+                self.renderProducts(filtered);
+            }, 300);
         });
     };
 
     self.updateLocalStorage = () => {
-        const items = [];
-        $("#cartItems").children().each(function() {
-            items.push($(this).data('title'));
+        const ids = [];
+        $("#cartItems").children().each(function () {
+            ids.push($(this).data('id'));
         });
-        localStorage.setItem('cart', JSON.stringify(items));
+        localStorage.setItem('cart', JSON.stringify(ids));
     };
 
     self.loadCartFromLocalStorage = () => {
-        const savedItems = JSON.parse(localStorage.getItem('cart')) || [];
-        savedItems.forEach(title => {
-            // Ürün listesinde karşılığı varsa onu klonlayıp sepete ekle
-            const productCard = $(`${selectors.container}[data-title="${title}"]`).first();
-            if(productCard.length) {
-                const clonedCard = productCard.clone(true);
-                clonedCard.find(selectors.addToCartButton).remove();
-                clonedCard.append('<button class="remove-from-cart-btn">×</button>');
-                $("#cartItems").append(clonedCard);
+        const saved = JSON.parse(localStorage.getItem('cart')) || [];
+        saved.forEach(id => {
+            const product = self.allProducts.find(p => p.id === id);
+            if (product) {
+                const card = self.buildProductCard(product);
+                card.attr('data-id', product.id).attr('data-title', product.title);
+                card.find(selectors.addToCartButton).remove();
+                card.append('<button class="remove-from-cart-btn">×</button>');
+                $("#cartItems").append(card);
             }
+        });
+    };
+
+    self.initSlider = (products) => {
+        const slider = $(".slider");
+        slider.empty();
+        products.slice(0, 5).forEach(p => {
+            slider.append(`<div><img src="${p.image}" alt="${p.title}" style="height:150px;margin:auto;"></div>`);
+        });
+        slider.slick({
+            autoplay: true,
+            dots: true,
+            arrows: false
         });
     };
 
