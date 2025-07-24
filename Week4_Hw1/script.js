@@ -1,10 +1,9 @@
-// Değişken sabitleri tanımladım
 const apiURL = "https://jsonplaceholder.typicode.com/users";
 const container = document.querySelector(".ins-api-users");
 const STORAGE_KEY = "usersData";
 const ONE_DAY = 24 * 60 * 60 * 1000; // 1 gün bu şekilde ms cinsinden hesaplanıyormuş.
 
-// Sayfa yüklemesi ve css eklenmesi
+
 document.addEventListener("DOMContentLoaded", () => {
 addCSS();
 
@@ -65,7 +64,7 @@ async function fetchUsers() {
     }
     const data = await response.json();
 
-    // localStorage'a kaydet (1 gün süreyle)
+    // localStorage'a kaydet 
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ data: data, timestamp: new Date().getTime() })
@@ -73,7 +72,6 @@ async function fetchUsers() {
 
     renderUsers(data);
   } catch (error) {
-    // Daha açıklayıcı hata mesajı
     showError("Veri alınamadı: " + error.message);
   }
 }
@@ -101,7 +99,7 @@ function renderUsers(users) {
     deleteBtn.className = "delete-btn";
     deleteBtn.textContent = "Sil";
 
-    // Silme event'i user id'e göre ekledik.
+    
     deleteBtn.addEventListener("click", () => deleteUser(user.id));
 
     card.appendChild(info);
@@ -110,9 +108,8 @@ function renderUsers(users) {
   });
 }
 
-// Kullanıcıyı hem dom'dan hem de localstorage'dan silmek için : 
+
 function deleteUser(id) {
-  // localStorage'taki veriyi al
   const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
   if (!stored) return;
 
