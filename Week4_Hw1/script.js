@@ -1,15 +1,14 @@
-// Kullanıcı verilerini API'den çeker ve localStorage ile yönetir
+// Değişken sabitleri tanımladım
 const apiURL = "https://jsonplaceholder.typicode.com/users";
 const container = document.querySelector(".ins-api-users");
 const STORAGE_KEY = "usersData";
-const ONE_DAY = 24 * 60 * 60 * 1000; // 1 gün
+const ONE_DAY = 24 * 60 * 60 * 1000; // 1 gün bu şekilde ms cinsinden hesaplanıyormuş.
 
-// Sayfa yüklenince çalışacak ana fonksiyon
+// Sayfa yüklemesi ve css eklenmesi
 document.addEventListener("DOMContentLoaded", () => {
-  // CSS ekleyelim
-  addStyles();
+addCSS();
 
-  // localStorage'ta veri var mı ve süresi dolmamış mı?
+  // string veriyi js objesine çevirip metnin alanlarına ulaştık.
   const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
   const now = new Date().getTime();
 
@@ -20,8 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// CSS'i dinamik olarak ekler
-function addStyles() {
+// CSS append ediyorum head'e tek js dosyası için.
+function addCSS() {
   const style = document.createElement("style");
   style.textContent = `
     .user-card {
@@ -57,7 +56,7 @@ function addStyles() {
   document.head.appendChild(style);
 }
 
-// API'den kullanıcıları çeker (Fetch + Promise)
+// fetch ile api isteği yaptık ve data sabitine ekledim. 
 async function fetchUsers() {
   try {
     const response = await fetch(apiURL);
@@ -74,31 +73,35 @@ async function fetchUsers() {
 
     renderUsers(data);
   } catch (error) {
-    showError(error.message);
+    // Daha açıklayıcı hata mesajı
+    showError("Veri alınamadı: " + error.message);
   }
 }
 
-// Kullanıcıları sayfada gösterir
+// Görüntülemek için render edip önce içeriği temizleyip sonra forech ile tek tek kartlara bastık.
 function renderUsers(users) {
-  container.innerHTML = ""; // Önce alanı temizle
+  container.innerHTML = ""; 
   users.forEach((user) => {
     const card = document.createElement("div");
     card.className = "user-card";
-    card.dataset.id = user.id; // Kullanıcıyı tanımak için id
+  // Kullanıcıyı tanımak için id
+    card.dataset.id = user.id; 
 
     const info = document.createElement("div");
     info.className = "user-info";
-    info.innerHTML = `
+    info.innerHTML = 
+    `
       <p><strong>${user.name}</strong></p>
       <p>${user.email}</p>
-      <p>${user.address.street}, ${user.address.city}</p>
+      <p>${user.address.street} / ${user.address.city}</p>
+      
     `;
 
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
     deleteBtn.textContent = "Sil";
 
-    // Silme olayı
+    // Silme event'i user id'e göre ekledik.
     deleteBtn.addEventListener("click", () => deleteUser(user.id));
 
     card.appendChild(info);
@@ -107,25 +110,29 @@ function renderUsers(users) {
   });
 }
 
-// Kullanıcıyı siler (DOM + localStorage)
+// Kullanıcıyı hem dom'dan hem de localstorage'dan silmek için : 
 function deleteUser(id) {
   // localStorage'taki veriyi al
   const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
   if (!stored) return;
 
-  const filtered = stored.data.filter((u) => u.id !== id);
+ let filtered = [];
+stored.data.forEach(function(u) {
+  // ID karşılaştırmasında tip farkını önlemek için parseInt kullanıyoruz
+  if (parseInt(u.id) !== parseInt(id)) {
+    filtered.push(u);
+  }
+});
 
-  // Güncel listeyi kaydet
+  // Güncel listeyi kaydetmek ve yeniden render etmek :
   localStorage.setItem(
     STORAGE_KEY,
     JSON.stringify({ data: filtered, timestamp: stored.timestamp })
   );
 
-  // Sayfayı güncelle
   renderUsers(filtered);
 }
 
-// Hata mesajı gösterir
 function showError(message) {
   container.innerHTML = `<p class="error-message">${message}</p>`;
 }
