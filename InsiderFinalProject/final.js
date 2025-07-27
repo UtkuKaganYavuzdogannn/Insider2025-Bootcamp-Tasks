@@ -11,11 +11,25 @@
   let favorites = new Set();
 
   const init = async () => {
+    const productDetail = document.querySelector(".product-detail");
+    if (!productDetail) return;
+
     const favData = localStorage.getItem(FAVORITES_KEY);
-    if (favData) favorites = new Set(JSON.parse(favData));
+    if (favData) {
+      try {
+        const parsed = JSON.parse(favData);
+        if (Array.isArray(parsed)) {
+          favorites = new Set(parsed);
+        } else {
+          favorites = new Set();
+        }
+      } catch {
+        favorites = new Set();
+      }
+    }
 
     let products = await loadProducts();
-    buildCarousel(products);
+    buildCarousel(productDetail, products);
     buildCSS();
     enableScroll();
     enableButtons();
@@ -47,7 +61,7 @@
     }
   }
 
-  function buildCarousel(products) {
+  function buildCarousel(container, products) {
     const productCards = products
       .map((p) => {
         const isFav = favorites.has(p.id);
@@ -67,39 +81,33 @@
       })
       .join("");
 
-    const html = `
-      <div class="carousel-area">    
-        <div class="carousel-container">
-          <p class="tavsiye-urunler-title">You Might Also Like</p>
-          <div class="carousel-responsive">
-            <div class="horizontal">
-              ${productCards}
-            </div>
+    const wrapper = document.createElement("div");
+    wrapper.className = "carousel-area";
+    wrapper.innerHTML = `
+      <div class="carousel-container">
+        <p class="tavsiye-urunler-title">You Might Also Like</p>
+        <div class="carousel-responsive">
+          <div class="horizontal">
+            ${productCards}
           </div>
-          <button class="lcw-carousel-nav lcw-carousel-nav-prev" disabled>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="24" viewBox="0 0 14.242 24.242">
-              <path fill="none" stroke="#333" stroke-linecap="round" stroke-width="3px"
-                d="M2106.842 2395.467l-10 10 10 10"
-                transform="translate(-2094.721 -2393.346)"></path>
-            </svg>
-          </button>
-          <button class="lcw-carousel-nav lcw-carousel-nav-next">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="24" viewBox="0 0 14.242 24.242" style="transform:rotate(180deg);">
-              <path fill="none" stroke="#333" stroke-linecap="round" stroke-width="3px"
-                d="M2106.842 2395.467l-10 10 10 10"
-                transform="translate(-2094.721 -2393.346)"></path>
-            </svg>
-          </button>
         </div>
+        <button class="lcw-carousel-nav lcw-carousel-nav-prev" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="24" viewBox="0 0 14.242 24.242">
+            <path fill="none" stroke="#333" stroke-linecap="round" stroke-width="3px"
+              d="M2106.842 2395.467l-10 10 10 10"
+              transform="translate(-2094.721 -2393.346)"></path>
+          </svg>
+        </button>
+        <button class="lcw-carousel-nav lcw-carousel-nav-next">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="24" viewBox="0 0 14.242 24.242" style="transform:rotate(180deg);">
+            <path fill="none" stroke="#333" stroke-linecap="round" stroke-width="3px"
+              d="M2106.842 2395.467l-10 10 10 10"
+              transform="translate(-2094.721 -2393.346)"></path>
+          </svg>
+        </button>
       </div>
     `;
-
-    const productDetail = document.querySelector(".product-detail");
-    if (productDetail) {
-      productDetail.insertAdjacentHTML("afterend", html);
-    } else {
-      console.error("'.product-detail' elementi bulunamadı. Kod sadece ürün sayfasında çalışır.");
-    }
+    container.insertAdjacentElement("afterend", wrapper);
   }
 
   function buildCSS() {
@@ -162,14 +170,15 @@
       }
       .horizontal::-webkit-scrollbar { display:none; }
 
+      /* Kartlar: border yok, radius yok, arası 2px */
       .lcw-product-item {
         flex:0 0 auto;
         width:calc(100% / 5 - 12px);
-        max-width:224px;
-        margin:0 4px;
-        border:1px solid #e0e0e0;
-        border-radius:4px;
+        max-width:220px;
+        margin:0 2px;
         background:#fff;
+        border:none;
+        border-radius:0;
         position:relative;
         cursor:pointer;
         display:flex;
@@ -186,32 +195,22 @@
       }
 
       .lcw-product-info {
-        padding:10px;
-        text-align:left;
+        padding:6px 10px;
         display:flex;
         flex-direction:column;
-        justify-content:flex-start;
         flex:1;
       }
       .lcw-product-name {
         font-size:13px;
         font-weight:400;
-        margin:0 0 5px;
-        height:32px;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        display:-webkit-box;
-        -webkit-line-clamp:2;
-        -webkit-box-orient:vertical;
+        margin:4px 0 8px 0;
         color:#555;
       }
       .lcw-product-price {
         font-size:18px;
         font-weight:bold;
         color:#193db0;
-        margin:5px 0;
-        display:flex;
-        align-items:flex-end;
+        margin-top:auto;
       }
 
       .product-add-to-cart {
@@ -219,15 +218,15 @@
         height:30px;
         background-color:#193db0;
         color:#fff;
-        width:95%;
-        border-radius:5px;
+        width:97%;
+        border-radius:0;
         border:none;
         line-height:19px;
         font-size:14px;
         font-weight:bold;
         text-transform:uppercase;
         text-align:center;
-        margin-top:auto;
+        margin-top:8px;
         cursor:pointer;
       }
 
@@ -257,8 +256,9 @@
       }
       .lcw-carousel-nav:disabled { cursor:default; }
 
-      .lcw-carousel-nav-prev { left:0; }
-      .lcw-carousel-nav-next { right:0; }
+      /* Oklar konteynır içine 10px sarkıyor */
+      .lcw-carousel-nav-prev { left:-10px; }
+      .lcw-carousel-nav-next { right:-10px; }
 
       @media(max-width:992px){
         .lcw-product-item { 
@@ -285,9 +285,12 @@
         .tavsiye-urunler-title { font-size:18px; }
       }
     `;
-    const style = document.createElement("style");
-    style.textContent = css;
-    document.head.appendChild(style);
+    if (!document.querySelector(".lcw-carousel-style")) {
+      const style = document.createElement("style");
+      style.className = "lcw-carousel-style";
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
   }
 
   function enableFavorites() {
